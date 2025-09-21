@@ -1,55 +1,155 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Rive + Animación de personaje</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #222;
-        }
+  <meta charset="UTF-8">
+  <title>Rive - Dos animaciones</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      background: #000; /* Fondo negro */
+      font-family: Arial, sans-serif;
+    }
 
-        button {
-            position: absolute;
-            top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
+    .half {
+      flex: 1;
+      display: flex;
+      flex-direction: column; /* Para tener botones debajo */
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.4s ease;
+      background: #000;
+    }
+
+    .divider {
+      width: 2px;
+      background: #fff; /* Línea blanca */
+      height: 100vh;
+    }
+
+    canvas {
+      width: 80%;
+      height: auto;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: black;
+      color: white;
+      border: 2px solid white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 5px;
+    }
+
+    button:hover {
+      background: white;
+      color: black;
+    }
+  </style>
 </head>
-
 <body>
-    <canvas id="riveCanvas" width="1000" height="1000"></canvas>
-    <button id="startAnimation">Curar</button>
+  <!-- Lado Izquierdo -->
+  <div id="left" class="half">
+    <canvas id="riveLeft" width="500" height="500"></canvas>
+    <button id="btnHeal">Curar</button>
+  </div>
 
-    <script src="https://unpkg.com/@rive-app/canvas"></script>
-    <script>
-        const r = new rive.Rive({
-            src: "lab3.riv" + "?v=" + Math.random(),
-            canvas: document.getElementById("riveCanvas"),
-            autoplay: true,
-            artboard: "Artboard2",
-            stateMachines: "State Machine 1",
-            onLoad: () => {
-                const artboard = r.artboard;
+  <!-- Línea en el medio -->
+  <div class="divider"></div>
 
-                const hoverInput = r.stateMachineInputs("State Machine 1").find(i => i.name === "isHealing");
-                const btnStartAnimation = document.getElementById("startAnimation");
+  <!-- Lado Derecho -->
+  <div id="right" class="half">
+    <canvas id="riveRight" width="500" height="500"></canvas>
+    <div>
+      <button id="btnResetDialog">Reiniciar diálogo</button>
+    </div>
+  </div>
 
-                btnStartAnimation.addEventListener("click", () => {
-                    hoverInput.value = true;
-                    setTimeout(() => {
-                        hoverInput.value = false;
-                    }, 3000);
-                });
-            }
+  <script src="https://unpkg.com/@rive-app/canvas"></script>
+  <script>
+    const leftDiv = document.getElementById("left");
+    const rightDiv = document.getElementById("right");
+
+    // ===== IZQUIERDA (Curar SOLO con botón) =====
+    const riveLeft = new rive.Rive({
+      src: "lab3.riv?v=" + Math.random(),
+      canvas: document.getElementById("riveLeft"),
+      autoplay: true,
+      artboard: "Artboard2",
+      stateMachines: "State Machine 1",
+      onLoad: () => {
+        const hoverInput = riveLeft.stateMachineInputs("State Machine 1").find(i => i.name === "isHealing");
+        const btnHeal = document.getElementById("btnHeal");
+
+        btnHeal.addEventListener("click", () => {
+          if (hoverInput) {
+            hoverInput.value = true;
+            setTimeout(() => { hoverInput.value = false; }, 3000);
+          }
         });
-    </script>
-</body>
 
+        leftDiv.addEventListener("mouseenter", () => {
+          leftDiv.style.opacity = "1";
+          rightDiv.style.opacity = "0.4";
+        });
+
+        leftDiv.addEventListener("mouseleave", () => {
+          leftDiv.style.opacity = "1";
+          rightDiv.style.opacity = "1";
+        });
+      }
+    });
+
+    // ===== DERECHA (Texto dinámico con botones) =====
+    let originalText = "";
+    let textRun = null;
+    const customText = "Hola soy Mario y me gusta diseñar animaciones con Rive!";
+
+    const riveRight = new rive.Rive({
+      src: "lab3.riv?v=" + Math.random(),
+      canvas: document.getElementById("riveRight"),
+      autoplay: true,
+      artboard: "Artboard",
+      stateMachines: "State Machine 1",
+      onLoad: () => {
+        const artboard = riveRight.artboard;
+        textRun = artboard.textRun("lblRun");
+
+        if (textRun) {
+          originalText = textRun.text; // guardamos el que viene del .riv
+          textRun.text = customText;   // mostramos el nuestro al inicio
+        }
+
+        // Botón: Reiniciar diálogo (volver al texto custom)
+        document.getElementById("btnResetDialog").addEventListener("click", () => {
+          riveRight.reset({ artboard: "Artboard" });
+          riveRight.play();
+
+          // 👇 volvemos a asignar el custom text después del reset
+          setTimeout(() => {
+            if (textRun) textRun.text = customText;
+          }, 50);
+        });
+
+    
+
+        // Hover solo opacidades
+        rightDiv.addEventListener("mouseenter", () => {
+          rightDiv.style.opacity = "1";
+          leftDiv.style.opacity = "0.4";
+        });
+
+        rightDiv.addEventListener("mouseleave", () => {
+          rightDiv.style.opacity = "1";
+          leftDiv.style.opacity = "1";
+        });
+      }
+    });
+  </script>
+</body>
 </html>
